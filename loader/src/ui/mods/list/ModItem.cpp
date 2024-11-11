@@ -185,7 +185,7 @@ bool ModItem::init(ModSource&& source) {
                 m_viewMenu->addChild(m_enableToggle);
                 m_viewMenu->updateLayout();
             }
-            if (mod->hasProblems()) {
+            if (mod->hasLoadProblems() || mod->targetsOutdatedGDVersion()) {
                 auto viewErrorSpr = createGeodeCircleButton(
                     CCSprite::createWithSpriteFrameName("exclamation.png"_spr), 1.f,
                     CircleBaseSize::Small
@@ -303,7 +303,7 @@ bool ModItem::init(ModSource&& source) {
     m_downloadListener.bind([this](auto) { this->updateState(); });
     m_downloadListener.setFilter(server::ModDownloadFilter(m_source.getID()));
 
-    m_settingNodeListener.bind([this](SettingNodeValueChangeEventV3*) {
+    m_settingNodeListener.bind([this](SettingNodeValueChangeEvent*) {
         this->updateState();
         return ListenerResult::Propagate;
     });
@@ -410,9 +410,14 @@ void ModItem::updateState() {
     m_titleContainer->updateLayout();
 
     // If there were problems, tint the BG red
-    if (m_source.asMod() && m_source.asMod()->hasProblems()) {
-        m_bg->setColor("mod-list-errors-found"_cc3b);
-        m_bg->setOpacity(isGeodeTheme() ? 25 : 90);
+    if (m_source.asMod()) {
+        if (m_source.asMod()->hasLoadProblems()) {
+            m_bg->setColor("mod-list-errors-found"_cc3b);
+            m_bg->setOpacity(isGeodeTheme() ? 25 : 90);
+        }
+        if (m_source.asMod()->targetsOutdatedGDVersion()) {
+            m_bg->setOpacity(isGeodeTheme() ? 0 : 0);
+        }
     }
 
     // Highlight item via BG if it wants to restart for extra UI attention

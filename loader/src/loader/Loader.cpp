@@ -68,13 +68,23 @@ std::vector<Mod*> Loader::getAllMods() {
 std::vector<LoadProblem> Loader::getAllProblems() const {
     return m_impl->getProblems();
 }
-std::vector<LoadProblem> Loader::getProblems() const {
+std::vector<LoadProblem> Loader::getLoadProblems() const {
     std::vector<LoadProblem> result;
     for (auto problem : this->getAllProblems()) {
         if (
             problem.type != LoadProblem::Type::Recommendation && 
-            problem.type != LoadProblem::Type::Suggestion
+            problem.type != LoadProblem::Type::Suggestion &&
+            problem.type != LoadProblem::Type::UnsupportedVersion
         ) {
+            result.push_back(problem);
+        }
+    }
+    return result;
+}
+std::vector<LoadProblem> Loader::getOutdated() const {
+    std::vector<LoadProblem> result;
+    for (auto problem : this->getAllProblems()) {
+        if (problem.type == LoadProblem::Type::UnsupportedVersion) {
             result.push_back(problem);
         }
     }
@@ -109,14 +119,14 @@ std::vector<std::string> Loader::getLaunchArgumentNames() const {
     return m_impl->getLaunchArgumentNames();
 }
 
-bool Loader::hasLaunchArgument(std::string_view const name) const {
+bool Loader::hasLaunchArgument(std::string_view name) const {
     return m_impl->hasLaunchArgument(name);
 }
 
-std::optional<std::string> Loader::getLaunchArgument(std::string_view const name) const {
+std::optional<std::string> Loader::getLaunchArgument(std::string_view name) const {
     return m_impl->getLaunchArgument(name);
 }
 
-bool Loader::getLaunchFlag(std::string_view const name) const {
+bool Loader::getLaunchFlag(std::string_view name) const {
     return m_impl->getLaunchFlag(name);
 }

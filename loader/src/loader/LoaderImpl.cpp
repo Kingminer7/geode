@@ -496,20 +496,20 @@ void Loader::Impl::loadModGraph(Mod* node, bool early) {
             thread::setName("Mod Unzip");
             log::loadNest(nest);
             auto res = unzipFunction();
+            auto prevNest = log::saveNest();
+            log::loadNest(nest);
+            if (!res) {
+                this->addProblem({
+                    LoadProblem::Type::UnzipFailed,
+                    node,
+                    res.unwrapErr()
+                });
+                log::error("Failed to unzip: {}", res.unwrapErr());
+                m_refreshingModCount -= 1;
+                log::loadNest(prevNest);
+                return;
+            }
             this->queueInMainThread([=, this]() {
-                auto prevNest = log::saveNest();
-                log::loadNest(nest);
-                if (!res) {
-                    this->addProblem({
-                        LoadProblem::Type::UnzipFailed,
-                        node,
-                        res.unwrapErr()
-                    });
-                    log::error("Failed to unzip: {}", res.unwrapErr());
-                    m_refreshingModCount -= 1;
-                    log::loadNest(prevNest);
-                    return;
-                }
                 loadFunction();
                 log::loadNest(prevNest);
             });
@@ -927,11 +927,11 @@ std::vector<std::string> Loader::Impl::getLaunchArgumentNames() const {
     return map::keys(m_launchArgs);
 }
 
-bool Loader::Impl::hasLaunchArgument(std::string_view const name) const {
+bool Loader::Impl::hasLaunchArgument(std::string_view name) const {
     return m_launchArgs.find(std::string(name)) != m_launchArgs.end();
 }
 
-std::optional<std::string> Loader::Impl::getLaunchArgument(std::string_view const name) const {
+std::optional<std::string> Loader::Impl::getLaunchArgument(std::string_view name) const {
     auto value = m_launchArgs.find(std::string(name));
     if (value == m_launchArgs.end()) {
         return std::nullopt;
@@ -939,7 +939,7 @@ std::optional<std::string> Loader::Impl::getLaunchArgument(std::string_view cons
     return std::optional(value->second);
 }
 
-bool Loader::Impl::getLaunchFlag(std::string_view const name) const {
+bool Loader::Impl::getLaunchFlag(std::string_view name) const {
     auto arg = this->getLaunchArgument(name);
     return arg.has_value() && arg.value() == "true";
 }

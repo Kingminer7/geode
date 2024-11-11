@@ -21,7 +21,7 @@ protected:
 public:
     using Callback = void(InvalidateCacheEvent*);
 
-    ListenerResult handle(MiniFunction<Callback> fn, InvalidateCacheEvent* event);
+    ListenerResult handle(std::function<Callback> fn, InvalidateCacheEvent* event);
 
     InvalidateCacheFilter() = default;
     InvalidateCacheFilter(ModListSource* src);
@@ -51,9 +51,10 @@ public:
 protected:
     std::unordered_map<size_t, Page> m_cachedPages;
     std::optional<size_t> m_cachedItemCount;
+    size_t m_pageSize = 10;
 
     virtual void resetQuery() = 0;
-    virtual ProviderTask fetchPage(size_t page, size_t pageSize, bool forceUpdate) = 0;
+    virtual ProviderTask fetchPage(size_t page, bool forceUpdate) = 0;
     virtual void setSearchQuery(std::string const& query) = 0;
 
     ModListSource();
@@ -75,6 +76,7 @@ public:
     PageLoadTask loadPage(size_t page, bool forceUpdate = false);
     std::optional<size_t> getPageCount() const;
     std::optional<size_t> getItemCount() const;
+    void setPageSize(size_t size);
     
     static void clearAllCaches();
     static bool isRestartRequired();
@@ -108,6 +110,7 @@ enum class InstalledModListType {
     All,
     OnlyUpdates,
     OnlyErrors,
+    OnlyOutdated,
 };
 struct InstalledModsQuery final : public LocalModsQueryBase {
     InstalledModListType type = InstalledModListType::All;
@@ -123,7 +126,7 @@ protected:
     InstalledModsQuery m_query;
 
     void resetQuery() override;
-    ProviderTask fetchPage(size_t page, size_t pageSize, bool forceUpdate) override;
+    ProviderTask fetchPage(size_t page, bool forceUpdate) override;
     void setSearchQuery(std::string const& query) override;
 
     InstalledModListSource(InstalledModListType type);
@@ -153,7 +156,7 @@ protected:
     server::ModsQuery m_query;
 
     void resetQuery() override;
-    ProviderTask fetchPage(size_t page, size_t pageSize, bool forceUpdate) override;
+    ProviderTask fetchPage(size_t page, bool forceUpdate) override;
     void setSearchQuery(std::string const& query) override;
 
     ServerModListSource(ServerModListType type);
@@ -174,7 +177,7 @@ public:
 class ModPackListSource : public ModListSource {
 protected:
     void resetQuery() override;
-    ProviderTask fetchPage(size_t page, size_t pageSize, bool forceUpdate) override;
+    ProviderTask fetchPage(size_t page, bool forceUpdate) override;
     void setSearchQuery(std::string const& query) override;
 
     ModPackListSource();

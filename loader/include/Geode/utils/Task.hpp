@@ -1,7 +1,6 @@
 #pragma once
 
 #include "general.hpp"
-#include "MiniFunction.hpp"
 #include "../loader/Event.hpp"
 #include "../loader/Loader.hpp"
 #include <mutex>
@@ -141,7 +140,7 @@ namespace geode {
 
             class PrivateMarker final {};
 
-            static std::shared_ptr<Handle> create(std::string_view const name) {
+            static std::shared_ptr<Handle> create(std::string_view name) {
                 return std::make_shared<Handle>(PrivateMarker(), name);
             }
 
@@ -154,7 +153,7 @@ namespace geode {
             friend class Task;
 
         public:
-            Handle(PrivateMarker, std::string_view const name) : m_name(name) {}
+            Handle(PrivateMarker, std::string_view name) : m_name(name) {}
             ~Handle() {
                 // If this Task was still pending when the Handle was destroyed, 
                 // it can no longer be listened to so just cancel and cleanup
@@ -249,11 +248,11 @@ namespace geode {
 
         using Value            = T;
         using Progress         = P;
-        using PostResult       = utils::MiniFunction<void(Result)>;
-        using PostProgress     = utils::MiniFunction<void(P)>;
-        using HasBeenCancelled = utils::MiniFunction<bool()>;
-        using Run              = utils::MiniFunction<Result(PostProgress, HasBeenCancelled)>;
-        using RunWithCallback  = utils::MiniFunction<void(PostResult, PostProgress, HasBeenCancelled)>;
+        using PostResult       = std::function<void(Result&&)>;
+        using PostProgress     = std::function<void(P)>;
+        using HasBeenCancelled = std::function<bool()>;
+        using Run              = std::function<Result(PostProgress, HasBeenCancelled)>;
+        using RunWithCallback  = std::function<void(PostResult, PostProgress, HasBeenCancelled)>;
 
         using Callback = void(Event*);
 
@@ -394,7 +393,7 @@ namespace geode {
          * Create a new Task that is immediately cancelled
          * @param name The name of the Task; used for debugging
          */
-        static Task cancelled(std::string_view const name = "<Cancelled Task>") {
+        static Task cancelled(std::string_view name = "<Cancelled Task>") {
             auto task = Task(Handle::create(name));
             Task::cancel(task.m_handle);
             return task;
@@ -405,7 +404,7 @@ namespace geode {
          * @param value The value the Task shall be finished with
          * @param name The name of the Task; used for debugging
          */
-        static Task immediate(T value, std::string_view const name = "<Immediate Task>") {
+        static Task immediate(T value, std::string_view name = "<Immediate Task>") {
             auto task = Task(Handle::create(name));
             Task::finish(task.m_handle, std::move(value));
             return task;
@@ -417,7 +416,7 @@ namespace geode {
          * function MUST be synchronous - Task creates the thread for you!
          * @param name The name of the Task; used for debugging
          */
-        static Task run(Run&& body, std::string_view const name = "<Task>") {
+        static Task run(Run&& body, std::string_view name = "<Task>") {
             auto task = Task(Handle::create(name));
             std::thread([handle = std::weak_ptr(task.m_handle), name = std::string(name), body = std::move(body)] {
                 utils::thread::setName(fmt::format("Task '{}'", name));
@@ -450,7 +449,7 @@ namespace geode {
          * calls will always be ignored
          * @param name The name of the Task; used for debugging
          */
-        static Task runWithCallback(RunWithCallback&& body, std::string_view const name = "<Callback Task>") {
+        static Task runWithCallback(RunWithCallback&& body, std::string_view name = "<Callback Task>") {
             auto task = Task(Handle::create(name));
             std::thread([handle = std::weak_ptr(task.m_handle), name = std::string(name), body = std::move(body)] {
                 utils::thread::setName(fmt::format("Task '{}'", name));
@@ -485,7 +484,7 @@ namespace geode {
          * were cancelled!
          */
         template <std::move_constructible NP>
-        static Task<std::vector<T*>, std::monostate> all(std::vector<Task<T, NP>>&& tasks, std::string_view const name = "<Multiple Tasks>") {
+        static Task<std::vector<T*>, std::monostate> all(std::vector<Task<T, NP>>&& tasks, std::string_view name = "<Multiple Tasks>") {
             using AllTask = Task<std::vector<T*>, std::monostate>;
 
             // If there are no tasks, return an immediate task that does nothing
@@ -582,7 +581,7 @@ namespace geode {
          * the mapped task is appended to the end
          */
         template <class ResultMapper, class ProgressMapper, class OnCancelled>
-        auto map(ResultMapper&& resultMapper, ProgressMapper&& progressMapper, OnCancelled&& onCancelled, std::string_view const name = "<Mapping Task>") const {
+        auto map(ResultMapper&& resultMapper, ProgressMapper&& progressMapper, OnCancelled&& onCancelled, std::string_view name = "<Mapping Task>") const {
             using T2 = decltype(resultMapper(std::declval<T*>()));
             using P2 = decltype(progressMapper(std::declval<P*>()));
 
@@ -652,7 +651,7 @@ namespace geode {
          * @param name The name of the Task; used for debugging. The name of 
          * the mapped task is appended to the end
          */        template <class ResultMapper, class ProgressMapper>
-        auto map(ResultMapper&& resultMapper, ProgressMapper&& progressMapper, std::string_view const name = "<Mapping Task>") const {
+        auto map(ResultMapper&& resultMapper, ProgressMapper&& progressMapper, std::string_view name = "<Mapping Task>") const {
             return this->map(std::move(resultMapper), std::move(progressMapper), +[]() {}, name);
         }
 
@@ -670,7 +669,7 @@ namespace geode {
          * the mapped task is appended to the end
          */        template <class ResultMapper>
             requires std::copy_constructible<P>
-        auto map(ResultMapper&& resultMapper, std::string_view const name = "<Mapping Task>") const {
+        auto map(ResultMapper&& resultMapper, std::string_view name = "<Mapping Task>") const {
             return this->map(std::move(resultMapper), +[](P* p) -> P { return *p; }, name);
         }
 
@@ -752,7 +751,7 @@ namespace geode {
             this->listen(std::move(onResult), [](auto const&) {}, [] {});
         }
 
-        ListenerResult handle(utils::MiniFunction<Callback> fn, Event* e) {
+        ListenerResult handle(std::function<Callback> fn, Event* e) {
             if (e->m_handle == m_handle && (!e->m_for || e->m_for == m_listener)) {
                 fn(e);
             }
