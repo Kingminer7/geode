@@ -10,6 +10,8 @@
 
 #include <thread>
 
+std::length_error::~length_error() _NOEXCEPT {} // do not ask...
+
 using namespace geode::prelude;
 
 static bool(*s_applicationDidFinishLaunchingOrig)(void*, SEL, void*, void*);
