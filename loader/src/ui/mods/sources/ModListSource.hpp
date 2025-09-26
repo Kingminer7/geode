@@ -152,6 +152,7 @@ enum class ServerModListType {
     Featured,
     Trending,
     Recent,
+    Pending,
 };
 
 class ServerModListSource : public ModListSource {

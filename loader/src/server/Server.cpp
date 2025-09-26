@@ -223,6 +223,16 @@ const char* server::sortToString(ModsSort sorting) {
     }
 }
 
+const char* server::statusToString(ModsStatus status) {
+    switch (status) {
+        default:
+	case ModsStatus::Accepted: return "accepted";
+	case ModsStatus::Pending: return "pending";
+	case ModsStatus::Rejected: return "rejected";
+	case ModsStatus::Unlisted: return "unlisted";
+    }
+}
+
 std::string ServerDateTime::toAgoString() const {
     auto const fmtPlural = [](auto count, auto unit) {
         if (count == 1) {
@@ -599,6 +609,7 @@ ServerRequest<ServerModsList> server::getMods(ModsQuery const& query, bool useCa
     if (query.developer) {
         req.param("developer", *query.developer);
     }
+    req.param("status",statusToString(query.status));
 
     // Paging (1-based on server, 0-based locally)
     req.param("page", std::to_string(query.page + 1));

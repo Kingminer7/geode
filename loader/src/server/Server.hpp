@@ -109,7 +109,15 @@ namespace server {
         RecentlyPublished,
     };
 
+    enum class ModsStatus {
+	Accepted,
+	Pending,
+	Rejected,
+	Unlisted,
+    };
+
     static const char* sortToString(ModsSort sorting);
+    static const char* statusToString(ModsStatus status);
 
     struct ModsQuery final {
         std::optional<std::string> query;
@@ -117,9 +125,11 @@ namespace server {
         std::unordered_set<std::string> tags;
         std::optional<bool> featured;
         ModsSort sorting = ModsSort::Downloads;
+	ModsStatus status = ModsStatus::Accepted;
         std::optional<std::string> developer;
         size_t page = 0;
         size_t pageSize = 10;
+
 
         bool operator==(ModsQuery const& other) const = default;
     };

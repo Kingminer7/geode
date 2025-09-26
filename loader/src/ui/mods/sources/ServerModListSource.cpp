@@ -54,6 +54,12 @@ ServerModListSource* ServerModListSource::get(ServerModListType type) {
             static auto inst = new ServerModListSource(ServerModListType::Recent);
             return inst;
         } break;
+
+	case ServerModListType::Pending: {
+            static auto inst = new ServerModListSource(ServerModListType::Pending);
+            return inst;
+        } break;
+
     }
 }
 
@@ -99,6 +105,10 @@ server::ModsQuery ServerModListSource::createDefaultQuery() const {
 
         case ServerModListType::Recent: return server::ModsQuery {
             .sorting = server::ModsSort::RecentlyPublished,
+        };
+
+	case ServerModListType::Pending: return server::ModsQuery {
+            .status = server::ModsStatus::Pending,
         };
     }
 }
