@@ -15,6 +15,7 @@ public:
         Details,
         Changelog,
         Versions,
+	Admin,
     };
 
 protected:

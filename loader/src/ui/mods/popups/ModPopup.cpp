@@ -594,8 +594,9 @@ bool ModPopup::setup(ModSource&& src) {
     tabsMenu->setID("tabs-menu");
 
     for (auto mdTab : std::initializer_list<std::tuple<const char*, const char*, const char*, Tab>> {
-        { "message.png"_spr,   "Description", "description", Tab::Details },
-        { "changelog.png"_spr, "Changelog",   "changelog",   Tab::Changelog }
+        { "message.png"_spr,       "Description", "description", Tab::Details },
+        { "changelog.png"_spr,     "Changelog",   "changelog",   Tab::Changelog },
+	{ "GJ_hammerIcon_001.png", "Admin",       "admin",       Tab::Admin },
         // { "version.png"_spr,   "Versions",    Tab::Versions },
     }) {
         auto spr = GeodeTabSprite::create(std::get<0>(mdTab), std::get<1>(mdTab), 140, m_source.asServer());
@@ -1079,6 +1080,13 @@ void ModPopup::loadTab(ModPopup::Tab tab) {
                 m_currentTabPage->setContentSize(size);
                 m_currentTabPage->setID("versions-container");
             } break;
+
+	    case Tab::Admin: {
+                m_currentTabPage = CCNode::create();
+                m_currentTabPage->setContentSize(size);
+                m_currentTabPage->setID("admin-container");
+            } break;
+;
         }
         m_currentTabPage->setAnchorPoint({ .5f, .0f });
         m_rightColumn->addChildAtPosition(m_currentTabPage, Anchor::Bottom, ccp(0, modtoberBannerHeight));
