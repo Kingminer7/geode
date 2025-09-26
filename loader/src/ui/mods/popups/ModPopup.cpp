@@ -589,7 +589,7 @@ bool ModPopup::setup(ModSource&& src) {
     auto tabsMenu = CCMenu::create();
     tabsMenu->ignoreAnchorPointForPosition(false);
     tabsMenu->setScale(.65f);
-    tabsMenu->setContentWidth(m_rightColumn->getContentWidth() / tabsMenu->getScale());
+    tabsMenu->setContentWidth(m_rightColumn->getContentWidth() / tabsMenu->getScale() - 20.f);
     tabsMenu->setAnchorPoint({ .5f, 1.f });
     tabsMenu->setID("tabs-menu");
 
@@ -624,7 +624,7 @@ bool ModPopup::setup(ModSource&& src) {
     }
 
     tabsMenu->setLayout(RowLayout::create()->setAxisAlignment(AxisAlignment::Start));
-    m_rightColumn->addChildAtPosition(tabsMenu, Anchor::Top);
+    m_rightColumn->addChildAtPosition(tabsMenu, Anchor::Top, {-5.f, 0});
 
     mainContainer->addChildAtPosition(m_rightColumn, Anchor::Right, ccp(-20, 0));
 
@@ -1085,6 +1085,7 @@ void ModPopup::loadTab(ModPopup::Tab tab) {
                 m_currentTabPage = CCNode::create();
                 m_currentTabPage->setContentSize(size);
                 m_currentTabPage->setID("admin-container");
+
             } break;
 ;
         }
