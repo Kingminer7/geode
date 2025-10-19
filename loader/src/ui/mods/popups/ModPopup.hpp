@@ -67,7 +67,8 @@ protected:
     void onSettings(CCObject*);
     void onLink(CCObject*);
     void onSupport(CCObject*);
-    void onModtoberInfo(CCObject*);
+    void onModtober24Info(CCObject*);
+    void onModtober25Info(CCObject*);
 
     bool availableForInstall() const;
 
