@@ -11,7 +11,7 @@ namespace geode {
         };
 
         struct Native final {
-            uint64_t code;  // Windows: lParam
+            uint64_t code;  // Windows: lParam, iOS: keyCode
             uint64_t extra; // Windows: wParam
         };
 
