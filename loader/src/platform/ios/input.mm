@@ -181,20 +181,18 @@ static UIKey* repeatKey = nil;
             if (!key || (press.phase != UIPressPhaseBegan && press.phase != UIPressPhaseEnded && press.phase != UIPressPhaseCancelled)) continue;
             enumKeyCodes code = keyToKeyCode(key.keyCode);
             bool down = press.phase == UIPressPhaseBegan;
-            if (KeyboardInputEvent(code, down ? Press : Release, {static_cast<uint64_t>(key.keyCode), 0}, std::chrono::steady_clock::now()).post() == ListenerResult::Stop) {
-                return;
-            }
-
-            auto dispatcher = CCKeyboardDispatcher::get();
-            if (!dispatcher) continue;
-
             NSUInteger mods = key.modifierFlags;
-            dispatcher->updateModifierKeys(
+            auto dispatcher = CCKeyboardDispatcher::get();
+            if (dispatcher) dispatcher->updateModifierKeys(
                 (mods & UIKeyModifierShift) != 0,
                 (mods & UIKeyModifierControl) != 0,
                 (mods & UIKeyModifierAlternate) != 0,
                 (mods & UIKeyModifierCommand) != 0
             );
+            if (KeyboardInputEvent(code, down ? Press : Release, {static_cast<uint64_t>(key.keyCode), 0}, std::chrono::steady_clock::now()).post() == ListenerResult::Stop) {
+                return;
+            }
+            if (!dispatcher) continue;
             dispatcher->dispatchKeyboardMSG(code, down, false, static_cast<double>(std::chrono::steady_clock::now().time_since_epoch().count()) / 1000000000);
             if (down) [self startRepeat:key];
             else [self stopRepeat];
