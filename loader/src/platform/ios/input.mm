@@ -1,9 +1,12 @@
 #include "Geode/loader/Log.hpp"
 #include <Geode/DefaultInclude.hpp>
+#include <Geode/cocos/CCDirector.h>
 #include <Geode/cocos/robtop/keyboard_dispatcher/CCKeyboardDelegate.h>
 #include <Geode/cocos/robtop/keyboard_dispatcher/CCKeyboardDispatcher.h>
+#include <Geode/cocos/robtop/mouse_dispatcher/CCMouseDispatcher.h>
 #include <Geode/cocos/text_input_node/CCIMEDispatcher.h>
 #include <Geode/utils/Keyboard.hpp>
+#include <objc/message.h>
 #include <objc/runtime.h>
 #include <UIKit/UIKit.h>
 
@@ -275,11 +278,14 @@ static UIPress* repeatPress = nil;
     repeatEvent = nil;
 }
 
+typedef CGVector(*ScrollDeltaFunc)(id, SEL);
+constexpr auto g_scrollFactor = 13.0f;
+
 - (void)g_sendEvent:(UIEvent*)event {
-    if (event.type == UIEventTypePresses || event.type == 4) { // it's sending as 4 for me, even though it should be sending as 3 (which is UIEventTypePresses)
+    if ([event type] == UIEventTypePresses || [event type] == 4) { // it's sending as 4 for me, even though it should be sending as 3 (which is UIEventTypePresses)
         UIPressesEvent* pe = (UIPressesEvent*)event;
-        for (UIPress* press in pe.allPresses) {
-            switch(press.phase) {
+        for (UIPress* press in [pe allPresses]) {
+            switch([press phase]) {
                 case UIPressPhaseBegan: {
                     [self handleKeyDown:event withPress:press withTime:[event timestamp] withRepeat:false];
                     [self startRepeat:event withPress:press];
@@ -293,13 +299,33 @@ static UIPress* repeatPress = nil;
                 default: break;
             }
         }
+    } else if ([event type] == UIEventTypeScroll) {
+        // UIScrollEvent is a private class, we love apple's private APIs
+        Class scrollClass = NSClassFromString(@"UIScrollEvent");
+        if (scrollClass && [event isKindOfClass:scrollClass]) {
+            SEL selector = NSSelectorFromString(@"nonAcceleratedDelta");
+            if (![event respondsToSelector:selector]) {
+                return;
+            }
+            IMP imp = [event methodForSelector:selector];
+            ScrollDeltaFunc getDelta = (ScrollDeltaFunc)imp;
+            CGVector delta = getDelta(event, selector);
+
+            if (ScrollWheelEvent().send(delta.dx, delta.dy) == ListenerResult::Stop) {
+                return;
+            }
+
+            CCDirector::get()->getMouseDispatcher()->dispatchScrollMSG(
+                delta.dx * g_scrollFactor, delta.dy * g_scrollFactor
+            );
+        }
     }
     [self g_sendEvent:event];
 }
 
 $execute {
-    Method m1 = class_getInstanceMethod(UIWindow.class, @selector(sendEvent:));
-    Method m2 = class_getInstanceMethod(UIWindow.class, @selector(g_sendEvent:));
+    Method m1 = class_getInstanceMethod([UIWindow class], @selector(sendEvent:));
+    Method m2 = class_getInstanceMethod([UIWindow class], @selector(g_sendEvent:));
     method_exchangeImplementations(m1, m2);
 }
 
