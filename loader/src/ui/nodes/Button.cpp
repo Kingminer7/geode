@@ -319,6 +319,7 @@ void Button::activate() {
     resetDefaults();
 
     if (m_impl->m_activateCallback) m_impl->m_activateCallback(this);
+    ButtonActivatedEvent(this).send(this);
 }
 
 void Button::setScaleMultiplier(float multiplier) {

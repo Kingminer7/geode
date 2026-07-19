@@ -237,4 +237,10 @@ namespace geode {
         class Impl;
         std::unique_ptr<Impl> m_impl;
     };
+
+    /// Fired when a Button is Activated (after the callback).
+    class ButtonActivatedEvent : public Event<ButtonActivatedEvent, bool(Button*), Button*> {
+        public:
+        using Event::Event;
+    };
 }
